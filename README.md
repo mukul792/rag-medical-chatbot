@@ -7,7 +7,7 @@ This project integrates **LangChain**, **FAISS**, **HuggingFace LLM**, and **Fla
 
 ---
 
-![Alt text](RAG_CHATBOT\app\templates\image.png)
+![Alt text](RAG_Chatbot/app/templates/image.png)
 
 ---
 
