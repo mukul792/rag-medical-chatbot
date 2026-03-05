@@ -1,9 +1,9 @@
 # 🩺 RAG Medical Chatbot — AI-Powered Medical Q&A Assistant
 
-A Flask application that provides **context-aware medical answers** using **Retrieval-Augmented Generation (RAG)**.  
+A FastAPI application that provides **context-aware medical answers** using **Retrieval-Augmented Generation (RAG)**.  
 Upload your **medical documents** (PDFs, reports, or research papers), and the chatbot retrieves relevant information before generating accurate, AI-powered responses.
 
-This project integrates **LangChain**, **FAISS**, **HuggingFace LLM**, and **Flask** to deliver a fast and reliable medical Q&A experience.
+This project integrates **LangChain**, **FAISS**, **HuggingFace LLM**, and **FastAPI** to deliver a fast and reliable medical Q&A experience.
 
 ---
 
@@ -17,7 +17,7 @@ This project integrates **LangChain**, **FAISS**, **HuggingFace LLM**, and **Fla
 - Ask medical questions in natural language  
 - AI retrieves relevant content and generates context-aware answers  
 - Supports multi-turn conversations  
-- Clean and interactive Flask interface  
+- Clean and interactive FastAPI interface  
 - Fast and accurate retrieval using vector embeddings (FAISS)  
 - Can handle complex medical queries and terminology  
 - Option to expand knowledge base with new documents  
@@ -29,7 +29,7 @@ This project integrates **LangChain**, **FAISS**, **HuggingFace LLM**, and **Fla
 - **LLM:** HuggingFace LLM  
 - **Vector Database:** FAISS 
 - **Framework:** LangChain  
-- **UI:** Flask
+- **UI:** FastAPI
 - **Document Processing:** PyPDF2
 - **Environment Management:** python-dotenv  
 - **Backend Logic:** RAG retrieval + QA chain  
