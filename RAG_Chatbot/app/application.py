@@ -1,71 +1,108 @@
-from flask import Flask,render_template,request,session,redirect,url_for
-from app.components.retriever import create_qa_chain
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+from markupsafe import Markup
 from dotenv import load_dotenv
 import os
+
+from app.components.retriever import create_qa_chain
 
 load_dotenv()
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app = FastAPI()
 
-from markupsafe import Markup
+# Session middleware
+app.add_middleware(SessionMiddleware, secret_key=os.urandom(24))
+
+templates = Jinja2Templates(directory="templates")
+
+
 def nl2br(value):
-    return Markup(value.replace("\n" , "<br>\n"))
+    return Markup(value.replace("\n", "<br>\n"))
 
-app.jinja_env.filters['nl2br'] = nl2br
+templates.env.filters["nl2br"] = nl2br
 
-@app.route("/", methods=["GET","POST"])
-def index():
-    if "messages" not in session:
-        session["messages"]=[]
 
-    messages = session["messages"]
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
 
-    if request.method=="POST":
-        user_input = request.form.get("prompt")
+    if "messages" not in request.session:
+        request.session["messages"] = []
 
-        if user_input:
+    messages = request.session["messages"]
 
-            messages.append({"role" : "user" , "content":user_input})
-            session["messages"] = messages
-            
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "messages": messages}
+    )
 
-            langchain_history = [] 
-            
-            history_length = len(messages) - 1 
 
-            for i in range(0, history_length, 2):
-                user_msg = messages[i]["content"]    
-                assistant_msg = messages[i+1]["content"] 
-                langchain_history.append((user_msg, assistant_msg))
+@app.post("/", response_class=HTMLResponse)
+async def chat(request: Request, prompt: str = Form(...)):
 
-            try:
-                qa_chain = create_qa_chain()
-                response = qa_chain.invoke({
-                    "question": user_input, 
-                    "chat_history": langchain_history 
-                })
-                
-                result = response.get("answer" , "I could not find a relevant answer in my knowledge base.")
+    if "messages" not in request.session:
+        request.session["messages"] = []
 
-                messages.append({"role" : "assistant" , "content" : result})
-                session["messages"] = messages
+    messages = request.session["messages"]
 
-            except Exception as e:
-                messages.pop()
-                session["messages"] = messages
-                error_msg = f"Error processing request: {str(e)}"
-                return render_template("index.html" , messages = session["messages"] , error = error_msg)
-            
-            return redirect(url_for("index"))
-            
-    return render_template("index.html" , messages=session.get("messages" , []))
+    user_input = prompt
 
-@app.route("/clear")
-def clear():
-    session.pop("messages" , None)
-    return redirect(url_for("index"))
+    if user_input:
 
-if __name__=="__main__":
-    app.run(host="0.0.0.0" , port=5000 , debug=False , use_reloader = False)
+        messages.append({"role": "user", "content": user_input})
+        request.session["messages"] = messages
+
+        langchain_history = []
+
+        history_length = len(messages) - 1
+
+        for i in range(0, history_length, 2):
+            user_msg = messages[i]["content"]
+            assistant_msg = messages[i + 1]["content"]
+            langchain_history.append((user_msg, assistant_msg))
+
+        try:
+            qa_chain = create_qa_chain()
+
+            response = qa_chain.invoke({
+                "question": user_input,
+                "chat_history": langchain_history
+            })
+
+            result = response.get(
+                "answer",
+                "I could not find a relevant answer in my knowledge base."
+            )
+
+            messages.append({"role": "assistant", "content": result})
+            request.session["messages"] = messages
+
+        except Exception as e:
+            messages.pop()
+            request.session["messages"] = messages
+
+            error_msg = f"Error processing request: {str(e)}"
+
+            return templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "messages": request.session["messages"],
+                    "error": error_msg
+                }
+            )
+
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/clear")
+async def clear(request: Request):
+    request.session.pop("messages", None)
+    return RedirectResponse(url="/", status_code=303)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5000)
