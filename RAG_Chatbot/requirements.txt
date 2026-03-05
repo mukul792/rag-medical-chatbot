@@ -4,6 +4,7 @@ langchain_huggingface
 faiss-cpu
 pypdf
 huggingface_hub
-flask
+fastapi
 python-dotenv
+
 sentence-transformers
